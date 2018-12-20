@@ -32,7 +32,7 @@ Prerequisites for running build and tests with gradle:
 To compile go proxy *in amd64 architecture* for docker:
 
 ```
-./gradlew build
+./gradlew goBuild
 ```
 
 To build the docker images, after compiling go proxy:

@@ -35,7 +35,6 @@ dependencies {
     }
 }
 
-
 subprojects {
     apply plugin: 'scalafmt'
     scalafmt.configFilePath = gradle.scalafmt.config
@@ -46,13 +45,86 @@ golang {
   goVersion = '1.11.6'
 }
 
-build.dependsOn vendor
+/*
+    The OpenWhiskPlatform class is a utility class to make the rest of what
+    happens with platforms a bit more understandable.  A "Platform" is a tuple
+    of an operating system and a processor.  Currently, the OpenWhisk CLI
+    supports three OS's:  Linux, Mac/Darwin, and Windows.  It supports x86
+    (32-bit or 64-bit) on all OS's.  On Linux, it also support System Z (s390x),
+    PowerPC (ppc64le), and ARM (32-bit and 64-bit) architectures.
+    Different contexts use different codings to refer to these architectures --
+    the class attempts to provide and interpret all needed codings.  Internal
+    storage is in "GO" format:
+        OS: linux, darwin, windows
+        Arch: 386, amd64, s390x, ppc64le, arm
+    TODO - It may be appropriate to refactor into a general purpose Platform
+           class for all builds, then to extend with specifics needed for
+           the OpenWhisk CLI build.
+ */
+class OpenWhiskPlatform {
+    String goOs
+    String goArch
 
-build {
-  targetPlatform = ['linux-amd64']
-  go """build -o common/proxy -ldflags '-extldflags "-static"'  main/proxy.go"""
+    /*
+        The 'zipFileName' property is the root file name to use for archives.
+     */
+    static String zipFileName
+
+    /*
+        Create a platform for the local platform
+     */
+    OpenWhiskPlatform() {
+        this(System.properties['os.name'], System.properties['os.arch'])
+    }
+
+    OpenWhiskPlatform(String platformSpec) {
+        this(*platformSpec.split('-'))
+    }
+
+    OpenWhiskPlatform(String inOs, String inArch) {
+        goOs=inOs.toLowerCase()
+                 .replaceAll(~/^mac.*$/,'darwin')
+                 .replaceAll(~/^.*n[ui]x.*$/,'linux')
+        goArch=inArch.toLowerCase()
+                     .replaceAll('x86_64','amd64')
+                     .replaceAll('i386','386')
+                     .replaceAll('x86_32','386')
+    }
+
+    /**
+     * Return the Openwhisk OS for this Platform
+     */
+    String getOwOs() {
+        ((goOs == 'darwin') ? 'mac' : goOs)
+    }
+
+    String getGoPlatform() {
+        "${goOs}-${goArch}"
+    }
+
+    /*
+        Everything below here is specific to the CLI build and could be
+        factored out into a subclass.
+     */
+    String getArchiveDirName() {
+        "${this.owOs}/${goArch}"
+    }
+
+    String getArchiveFileName() {
+        String suffix
+        switch (goArch) {
+            case "386": suffix = '-32bit'; break;
+            case "amd64": suffix = ''; break;
+            default: suffix = "-${goArch}"; break;
+        }
+        String archivetype = (goOs == 'linux') ? 'tgz' : 'zip'
+        "${zipFileName}-${this.owOs}${suffix}.${archivetype}"
+    }
 }
 
-task cleanup(type: Delete) {
-    delete 'common/proxy'
+goBuild.dependsOn goVendor
+
+goBuild {
+   targetPlatform = ["linux-${(new OpenWhiskPlatform()).goArch}".toString()]
+   go 'build -o actionProxyLoop/proxy main/proxy.go'
 }
