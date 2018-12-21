@@ -112,6 +112,7 @@ class OpenWhiskPlatform {
                      .replaceAll('x86_64','amd64')
                      .replaceAll('i386','386')
                      .replaceAll('x86_32','386')
+                     .replaceAll('aarch64','arm64')
     }
 
     /**
