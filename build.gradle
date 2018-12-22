@@ -79,19 +79,11 @@ golang {
     the class attempts to provide and interpret all needed codings.  Internal
     storage is in "GO" format:
         OS: linux, darwin, windows
-        Arch: 386, amd64, s390x, ppc64le, arm
-    TODO - It may be appropriate to refactor into a general purpose Platform
-           class for all builds, then to extend with specifics needed for
-           the OpenWhisk CLI build.
+        Arch: 386, amd64, s390x, ppc64le, arm64
  */
 class OpenWhiskPlatform {
     String goOs
     String goArch
-
-    /*
-        The 'zipFileName' property is the root file name to use for archives.
-     */
-    static String zipFileName
 
     /*
         Create a platform for the local platform
@@ -124,25 +116,6 @@ class OpenWhiskPlatform {
 
     String getGoPlatform() {
         "${goOs}-${goArch}"
-    }
-
-    /*
-        Everything below here is specific to the CLI build and could be
-        factored out into a subclass.
-     */
-    String getArchiveDirName() {
-        "${this.owOs}/${goArch}"
-    }
-
-    String getArchiveFileName() {
-        String suffix
-        switch (goArch) {
-            case "386": suffix = '-32bit'; break;
-            case "amd64": suffix = ''; break;
-            default: suffix = "-${goArch}"; break;
-        }
-        String archivetype = (goOs == 'linux') ? 'tgz' : 'zip'
-        "${zipFileName}-${this.owOs}${suffix}.${archivetype}"
     }
 }
 
