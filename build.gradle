@@ -123,5 +123,5 @@ goBuild.dependsOn goVendor
 
 goBuild {
    targetPlatform = ["linux-${(new OpenWhiskPlatform()).goArch}".toString()]
-   go 'build -o actionProxyLoop/proxy main/proxy.go'
+   go """build -o common/proxy -ldflags '-extldflags "-static"' main/proxy.go"""
 }
