@@ -16,7 +16,7 @@
 def build_shell='''
 env | grep JAVA || /bin/true
 ./gradlew \
-  :actionProxyLoop:distDocker \
+  :actionloop:distDocker \
   :golang1.11:distDocker \
   -PdockerRegistry=${OPENWHISK_TARGET_REGISTRY:-docker.io} \
   -PdockerImagePrefix=${OPENWHISK_TARGET_PREFIX:-openwhisk} \
@@ -27,7 +27,7 @@ def manifest_shell='''
 registry=${OPENWHISK_TARGET_REGISTRY:-docker.io}
 prefix=${OPENWHISK_TARGET_PREFIX:-openwhisk}
 rm -rf ~/.docker/manifests
-for i in actionloop actionloop-golang-v1.11; do
+for i in actionloop-v2 actionloop-golang-v1.11; do
   docker manifest create ${registry}/${prefix}/$i:latest \
     ${registry}/${prefix}/$i:latest-x86_64 \
     ${registry}/${prefix}/$i:latest-s390x \
